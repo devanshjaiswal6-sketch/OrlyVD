@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rahul, do you want a Kurta for Valentine's Day? 💖</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A playful Valentine invite. Confetti, dodgey buttons, and a countdown to February 14." />
+  <meta property="og:title" content="Be My Valentine 💖" />
+  <meta property="og:description" content="A playful Valentine invite. Confetti, dodgey buttons, and a countdown to February 14." />
+  <meta property="og:type" content="website" />
+
+  <!-- Performance: preconnect to common CDNs used -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="preconnect" href="https://drive.google.com" crossorigin />
+
+  <!-- Confetti (externally hosted) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+
+  <style>
+    :root{
+      --bg-overlay: rgba(0,0,0,0.35);
+      --card-bg: rgba(255,255,255,0.96);
+      --accent: #ff4d6d;
+      --accent-2: #ff8fa3;
+      --muted: #666;
+      --text: #222;
+      --radius: 26px;
+      --shadow: 0 30px 70px rgba(0,0,0,0.28);
+      --transition: 200ms ease;
+    }
+
+    *{ box-sizing: border-box; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+
+    html,body{ height:100%; margin:0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(var(--bg-overlay), var(--bg-overlay)),
+        url("https://drive.google.com/uc?export=view&id=1JewZiE8HJr99YpZNJI87MeTWwNWcnlf7")
+        center / cover no-repeat;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      flex-direction: column; /* allow showing scratch area beneath card */
+      gap: 18px;
+    }
+
+    /* Decorative emoji layer behind the card */
+    .bg-emojis {
+      position: fixed;
+      inset: 0;
+      pointer-events: none; /* don't interfere with clicks */
+      z-index: 0;
+      font-size: 48px;
+      display: block;
+    }
+
+    .bg-emojis .emoji {
+      position: absolute;
+      transform-origin: center;
+      opacity: 0.95;
+      will-change: transform, opacity;
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,0.12));
+    }
+
+    /* gentle floating animation (disabled for reduced motion) */
+    @keyframes float-1 {
+      0% { transform: translateY(0) rotate(-3deg); }
+      50% { transform: translateY(-10px) rotate(2deg); }
+      100% { transform: translateY(0) rotate(-3deg); }
+    }
+    @keyframes float-2 {
+      0% { transform: translateY(0) rotate(2deg); }
+      50% { transform: translateY(-8px) rotate(-2deg); }
+      100% { transform: translateY(0) rotate(2deg); }
+    }
+
+    /* Stop animations for users who prefer reduced motion */
+    @media (prefers-reduced-motion: no-preference) {
+      .bg-emojis .emoji.float-a { animation: float-1 4200ms ease-in-out infinite; }
+      .bg-emojis .emoji.float-b { animation: float-2 3600ms ease-in-out infinite; }
+    }
+
+    /* Ensure the card sits above the emojis */
+    .card{
+      background: var(--card-bg);
+      backdrop-filter: blur(6px);
+      padding: clamp(20px, 4vw, 48px);
+      border-radius: var(--radius);
+      text-align: center;
+      box-shadow: var(--shadow);
+      max-width: 720px;
+      width: 100%;
+      position: relative;
+      z-index: 1;
+    }
+
+    h1{
+      margin: 0 0 8px;
+      font-size: clamp(20px, 3.5vw, 32px);
+      color: var(--text);
+    }
+
+    .countdown{
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    p {
+      margin: 0 0 24px;
+      color: #444;
+      font-size: clamp(15px, 2vw, 18px);
+    }
+
+    .buttons{
+      position: relative;
+      height: 180px;
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:16px;
+    }
+
+    button{
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--transition), opacity var(--transition), transform var(--transition);
+      outline: none;
+      padding: 16px 34px;
+      font-size: 20px;
+      will-change: transform;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:focus{
+      box-shadow: 0 0 0 4px rgba(255,77,109,0.12);
+    }
+
+    button:focus-visible{
+      outline: 2px solid rgba(0,0,0,0.08);
+    }
+
+    #yesBtn{
+      background: var(--accent);
+      color: white;
+    }
+
+    #yesBtn:hover{ background: #ff355b; }
+
+    #noBtn{
+      background: #ddd;
+      color: #333;
+      position: absolute;
+      right: 0;
+      top: 0;
+      transform-origin: center;
+    }
+
+    /* small screens: stack */
+    @media (max-width:480px){
+      .buttons{ height: 150px; }
+      #noBtn{ right: 0; top: 0; }
+      .bg-emojis { font-size: 36px; }
+    }
+
+    /* Respect user's reduced motion preference */
+    @media (prefers-reduced-motion: reduce){
+      *{ transition: none !important; animation: none !important; }
+    }
+
+    .success{ display:none; }
+
+    /* --- Scratch area styles --- */
+    .scratch-wrap {
+      max-width: 720px;
+      width: 100%;
+      border-radius: var(--radius);
+      overflow: visible;
+      position: relative;
+      z-index: 1;
+      display: none; /* shown after yes */
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+    }
+
+    .scratch-card {
+      width: 100%;
+      background: linear-gradient(180deg,#fff,#fff);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-height: 120px;
+    }
+
+    .scratch-message {
+      font-weight: 800;
+      font-size: clamp(20px, 3.2vw, 28px);
+      color: #111;
+      text-align: center;
+      letter-spacing: 0.6px;
+      user-select: none;
+      z-index: 0;
+      padding: 6px 12px;
+    }
+
+    .scratch-cover {
+      position: absolute;
+      inset: 12px;
+      border-radius: calc(var(--radius) - 12px);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      pointer-events: auto;
+      background: linear-gradient(180deg,#bdbdbd,#9e9e9e);
+    }
+
+    .scratch-cover canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none; /* we handle touch */
+      cursor: grab;
+    }
+    .scratch-cover:active canvas { cursor: grabbing; }
+
+    .scratch-hint {
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.9);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .scratch-hint button {
+      pointer-events: auto;
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.12);
+      color: #111;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* When fully revealed, fade out the cover */
+    .scratch-cover.revealed {
+      transition: opacity 420ms ease;
+      opacity: 0;
+      pointer-events: none;
+      visibility: hidden;
+    }
+
+  </style>
+</head>
+<body>
+  <!-- Decorative emojis outside the main card -->
+  <div class="bg-emojis" aria-hidden="true">
+    <!-- top-left cluster -->
+    <span class="emoji float-a" style="left:6vw; top:8vh; font-size:clamp(28px,6vw,64px)">🐱</span>
+    <span class="emoji float-b" style="left:12vw; top:16vh; font-size:clamp(18px,4vw,40px)">🌸</span>
+
+    <!-- top-right cluster -->
+    <span class="emoji float-b" style="right:8vw; top:10vh; font-size:clamp(30px,6vw,70px)">😺</span>
+    <span class="emoji float-a" style="right:14vw; top:18vh; font-size:clamp(20px,4vw,42px)">🌺</span>
+
+    <!-- bottom-left cluster -->
+    <span class="emoji float-a" style="left:6vw; bottom:14vh; font-size:clamp(28px,6vw,60px)">🐈</span>
+    <span class="emoji float-b" style="left:14vw; bottom:8vh; font-size:clamp(20px,4vw,36px)">🌼</span>
+
+    <!-- bottom-right cluster -->
+    <span class="emoji float-b" style="right:6vw; bottom:12vh; font-size:clamp(34px,7vw,78px)">😻</span>
+    <span class="emoji float-a" style="right:14vw; bottom:6vh; font-size:clamp(22px,4vw,40px)">🌷</span>
+  </div>
+
+  <main class="card" role="main">
+    <h1>Ritika, will you be my Valentine? 💘</h1>
+    <div class="countdown" id="countdown" aria-live="polite"></div>
+    <p>I promise lifetime snacks, bad jokes, and unconditional love.</p>
+
+    <div class="buttons" id="buttonArea" aria-hidden="false">
+      <button id="yesBtn" type="button" aria-label="Yes, I will be your Valentine">Yes 💖</button>
+      <button id="noBtn" type="button" aria-label="No, I will not be your Valentine">No 🙃</button>
+    </div>
+
+    <div class="success" id="success" role="status" aria-live="polite" aria-hidden="true">
+      <h1>YAY 🥰</h1>
+      <p>Best decision of the year, Monks.</p>
+    </div>
+  </main>
+
+  <!-- Scratch area (hidden until Yes is clicked) -->
+  <div class="scratch-wrap" id="scratchWrap" aria-hidden="true">
+    <div class="scratch-card" role="region" aria-label="Scratch to reveal message">
+      <div class="scratch-message" id="scratchMessage">Use CODE "LOVE10" to get 10% off at Orly!</div>
+      <div class="scratch-cover" id="scratchCover" aria-hidden="false">
+        <canvas id="scratchCanvas" width="0" height="0"></canvas>
+        <div class="scratch-hint">Scratch to reveal <button id="revealBtn" type="button" aria-label="Reveal message">Reveal</button></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Defensive feature detection (ensure these exist before use)
+    const isTouchDevice = (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || false;
+    const prefersReducedMotion = (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) || false;
+
+    // Node refs
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn = document.getElementById('noBtn');
+    const buttonArea = document.getElementById('buttonArea');
+    const success = document.getElementById('success');
+    const countdownEl = document.getElementById('countdown');
+
+    // Scratch refs
+    const scratchWrap = document.getElementById('scratchWrap');
+    const scratchCover = document.getElementById('scratchCover');
+    const scratchCanvas = document.getElementById('scratchCanvas');
+    const revealBtn = document.getElementById('revealBtn');
+
+    // State
+    let noClicks = 0;
+    let shrinkFactor = 1;
+
+    /* -------- Countdown -------- */
+    const target = new Date('February 14, 2026 00:00:00').getTime();
+
+    function updateCountdown() {
+      const now = Date.now();
+      const diff = target - now;
+
+      if (diff <= 0) {
+        countdownEl.textContent = "It’s Valentine’s Day 💘";
+        return;
+      }
+
+      const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+      const m = Math.floor((diff / (1000 * 60)) % 60);
+
+      countdownEl.textContent = `${d} days • ${h} hrs • ${m} mins to go 💞`;
+    }
+
+    updateCountdown(); // show immediately
+    setInterval(updateCountdown, 1000);
+
+    /* -------- No Button Dodge (throttled) -------- */
+    if (!isTouchDevice) {
+      let rafId = null;
+
+      buttonArea.addEventListener('mousemove', (e) => {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          const rect = noBtn.getBoundingClientRect();
+          const dist = Math.hypot(
+            e.clientX - (rect.left + rect.width / 2),
+            e.clientY - (rect.top + rect.height / 2)
+          );
+
+          if (dist < 140) moveNo();
+        });
+      });
+    } else {
+      // On touch devices, optionally move the button a little when tapped to avoid frustration.
+      noBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        moveNo();
+      }, { passive: false });
+    }
+
+    function moveNo() {
+      if (noClicks >= 3) return;
+
+      const area = buttonArea.getBoundingClientRect();
+      const btn = noBtn.getBoundingClientRect();
+
+      const maxX = Math.max(0, area.width - btn.width);
+      const maxY = Math.max(0, area.height - btn.height);
+
+      const x = Math.round(Math.random() * maxX);
+      const y = Math.round(Math.random() * maxY);
+
+      // place relative to buttonArea; clear 'right' so 'left' takes effect
+      noBtn.style.left = x + 'px';
+      noBtn.style.top = y + 'px';
+      noBtn.style.right = 'auto';
+    }
+
+    /* -------- No Click Logic -------- */
+    noBtn.addEventListener('click', () => {
+      noClicks++;
+
+      if (noClicks >= 3) {
+        noBtn.style.display = 'none';
+        return;
+      }
+
+      shrinkFactor = Math.max(0.55, shrinkFactor - 0.18);
+
+      // use transform for smoother layout
+      noBtn.style.transform = `scale(${shrinkFactor})`;
+      moveNo();
+    });
+
+    // Keyboard accessibility: move the 'no' button if focused and arrow keys pressed
+    noBtn.addEventListener('keydown', (e) => {
+      const arrows = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+      if (arrows.includes(e.key)) {
+        e.preventDefault();
+        moveNo();
+      }
+    });
+
+    /* -------- Confetti sequence -------- */
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // layered confetti bursts over ~1800ms
+    async function launchConfettiSequence() {
+      if (prefersReducedMotion) return;
+      if (typeof confetti !== 'function') return;
+
+      const colors = ['#ff4d6d', '#ff8fa3', '#ffd6e0', '#fff176', '#a5d6a7'];
+
+      // Series of bursts: center big, left & right, then cascade showers
+      const bursts = [
+        { particleCount: 120, spread: 160, origin: { x: 0.5, y: 0.35 }, colors },
+        { particleCount: 70, spread: 120, origin: { x: 0.25, y: 0.3 }, colors },
+        { particleCount: 70, spread: 120, origin: { x: 0.75, y: 0.3 }, colors },
+        { particleCount: 60, spread: 80, origin: { x: 0.15, y: 0.6 }, colors },
+        { particleCount: 60, spread: 80, origin: { x: 0.85, y: 0.6 }, colors },
+      ];
+
+      // Play bursts with short delays
+      for (let i = 0; i < bursts.length; i++) {
+        const b = bursts[i];
+        confetti({
+          particleCount: b.particleCount,
+          spread: b.spread,
+          origin: b.origin,
+          colors: b.colors,
+          scalar: 1 + Math.random() * 0.2
+        });
+        await sleep(180 + Math.random() * 120);
+      }
+
+      // A short randomized "rain" of small bursts
+      const rainEnd = Date.now() + 700;
+      while (Date.now() < rainEnd) {
+        confetti({
+          particleCount: 18 + Math.floor(Math.random() * 12),
+          spread: 50 + Math.random() * 40,
+          origin: { x: Math.random(), y: 0.2 + Math.random() * 0.6 },
+          colors
+        });
+        // small random gap
+        await sleep(80 + Math.random() * 60);
+      }
+    }
+
+    /* -------- Yes -------- */
+    yesBtn.addEventListener('click', triggerYes);
+
+    // Provide keyboard activation (space/enter)
+    yesBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        triggerYes();
+      }
+    });
+
+    // make async so we can await confetti sequence if needed
+    async function triggerYes() {
+      // hide buttons, announce success
+      buttonArea.style.display = 'none';
+      buttonArea.setAttribute('aria-hidden', 'true');
+      success.style.display = 'block';
+      success.setAttribute('aria-hidden', 'false');
+
+      // show scratch area below the card
+      showScratch();
+
+      // launch confetti sequence but don't block the UI
+      if (!prefersReducedMotion && typeof confetti === 'function') {
+        launchConfettiSequence();
+      } else if (!prefersReducedMotion && typeof confetti !== 'function') {
+        // fallback: simple celebratory scaling (non-essential)
+        success.animate([
+          { transform: 'scale(0.98)' },
+          { transform: 'scale(1.02)' },
+          { transform: 'scale(1)' }
+        ], { duration: 600, easing: 'ease-out' });
+      }
+    }
+
+    // Small improvement: ensure the "no" button initial left/top are set so moveNo calculations are consistent
+    // (this also avoids mixing left/right positioning)
+    (function initNoPos(){
+      noBtn.style.left = '';
+      noBtn.style.top = '';
+      noBtn.style.right = '0';
+      noBtn.style.top = '0';
+    })();
+
+
+    /* ---------------- Scratch implementation ---------------- */
+    let ctx = null;
+    let isDrawing = false;
+    let lastPointer = { x: 0, y: 0 };
+    let pixelRatio = window.devicePixelRatio || 1;
+    const SCRATCH_RADIUS = 28; // base radius in CSS pixels
+    const REVEAL_THRESHOLD = 0.45; // reveal when ~45% cleared
+
+    function showScratch() {
+      // Make visible (only once)
+      if (scratchWrap.style.display === 'flex' || scratchWrap.style.display === 'block') return;
+      // use 'flex' so layout/centering in CSS works as intended
+      scratchWrap.style.display = 'flex';
+      scratchWrap.setAttribute('aria-hidden', 'false');
+
+      // Initialize the canvas to match the cover size
+      // If the cover is not yet sized, defer slightly
+      setTimeout(() => {
+        setupScratchCanvas();
+      }, 30);
+    }
+
+    function setupScratchCanvas() {
+      // Remove previously-attached handlers to avoid duplicates when re-initializing
+      try {
+        scratchCanvas.removeEventListener('pointerdown', onPointerDown);
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        scratchCanvas.removeEventListener('touchmove', touchMovePreventer);
+        revealBtn.removeEventListener('click', revealFully);
+        window.removeEventListener('resize', onWindowResize);
+      } catch (e) { /* ignore if none attached */ }
+
+      // Get layout size of cover
+      const coverRect = scratchCover.getBoundingClientRect();
+      const cssW = Math.max(60, Math.floor(coverRect.width));
+      const cssH = Math.max(60, Math.floor(coverRect.height));
+
+      // Pixel-perfect size for high-dpi displays
+      pixelRatio = window.devicePixelRatio || 1;
+      scratchCanvas.width = Math.floor(cssW * pixelRatio);
+      scratchCanvas.height = Math.floor(cssH * pixelRatio);
+      scratchCanvas.style.width = cssW + 'px';
+      scratchCanvas.style.height = cssH + 'px';
+
+      // Ensure touch-action is none for better touch responsiveness on mobile
+      scratchCanvas.style.touchAction = 'none';
+
+      ctx = scratchCanvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return;
+
+      // Clear any existing pixels before redraw
+      ctx.clearRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+
+      // Fill with a metallic-looking gradient
+      const g = ctx.createLinearGradient(0, 0, scratchCanvas.width, scratchCanvas.height);
+      g.addColorStop(0, '#bdbdbd');
+      g.addColorStop(0.5, '#9e9e9e');
+      g.addColorStop(1, '#bdbdbd');
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, scratchCanvas.width, scratchCanvas.height);
+
+      // Add some subtle noise / pattern to mimic scratch-off
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      const step = Math.max(6, Math.floor(6 * pixelRatio));
+      for (let x = 0; x < scratchCanvas.width; x += step) {
+        for (let y = 0; y < scratchCanvas.height; y += step*2) {
+          if (Math.random() > 0.92) ctx.fillRect(x, y, 1, 1);
+        }
+      }
+
+      // Prepare to erase with destination-out
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+
+      // Pointer event handlers
+      scratchCanvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+      window.addEventListener('pointermove', onPointerMove, { passive: false });
+      window.addEventListener('pointerup', onPointerUp, { passive: false });
+
+      // Prevent scrolling when interacting (keep a named function so we can remove it later)
+      scratchCanvas.addEventListener('touchmove', touchMovePreventer, { passive: false });
+
+      // Fallback: reveal button
+      revealBtn.addEventListener('click', revealFully);
+
+      // Recompute when window resizes to keep crispness (simple approach: re-init)
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    // small helper to remove/attach the touchmove prevention
+    function touchMovePreventer(e) { e.preventDefault(); }
+
+    function onWindowResize() {
+      // small debounce
+      clearTimeout(onWindowResize._t);
+      onWindowResize._t = setTimeout(() => {
+        // If already revealed, nothing to do
+        if (scratchCover.classList.contains('revealed')) return;
+        setupScratchCanvas();
+      }, 120);
+    }
+
+    function getPointerPos(e) {
+      const rect = scratchCanvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (scratchCanvas.width / rect.width);
+      const y = (e.clientY - rect.top) * (scratchCanvas.height / rect.height);
+      return { x, y };
+    }
+
+    function onPointerDown(e) {
+      if (scratchCover.classList.contains('revealed')) return;
+      isDrawing = true;
+      scratchCanvas.setPointerCapture && scratchCanvas.setPointerCapture(e.pointerId);
+      lastPointer = getPointerPos(e);
+      drawAt(lastPointer.x, lastPointer.y);
+      e.preventDefault();
+    }
+
+    function onPointerMove(e) {
+      if (!isDrawing) return;
+      const p = getPointerPos(e);
+      // smooth line between lastPointer and p by drawing circles along the segment
+      const dx = p.x - lastPointer.x;
+      const dy = p.y - lastPointer.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const steps = Math.ceil(dist / (SCRATCH_RADIUS * pixelRatio / 3));
+      for (let i = 0; i <= steps; i++) {
+        const t = i / Math.max(1, steps);
+        const ix = lastPointer.x + dx * t;
+        const iy = lastPointer.y + dy * t;
+        drawAt(ix, iy);
+      }
+      lastPointer = p;
+      e.preventDefault();
+
+      // occasionally check reveal percent
+      if (Math.random() < 0.08) {
+        computeRevealPercentage().then(pct => {
+          if (pct >= REVEAL_THRESHOLD) revealFully();
+        });
+      }
+    }
+
+    function onPointerUp(e) {
+      if (!isDrawing) return;
+      isDrawing = false;
+      scratchCanvas.releasePointerCapture && scratchCanvas.releasePointerCapture(e.pointerId);
+      // final check
+      computeRevealPercentage().then(pct => {
+        if (pct >= REVEAL_THRESHOLD) revealFully();
+      });
+    }
+
+    function drawAt(x, y) {
+      if (!ctx) return;
+      const r = Math.max(12, SCRATCH_RADIUS * pixelRatio);
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // sample the canvas alpha channel to estimate how much has been cleared
+    async function computeRevealPercentage() {
+      if (!ctx) return 0;
+      try {
+        // sample a coarse grid to keep it fast
+        const w = scratchCanvas.width;
+        const h = scratchCanvas.height;
+        const step = Math.max(8, Math.floor(Math.min(w, h) / 40)); // ~40x40 samples
+        const img = ctx.getImageData(0, 0, w, h);
+        const data = img.data;
+        let cleared = 0;
+        let total = 0;
+        for (let y = 0; y < h; y += step) {
+          for (let x = 0; x < w; x += step) {
+            const idx = (y * w + x) * 4 + 3; // alpha
+            const a = data[idx]; // 0-255
+            total++;
+            // Count a pixel as "cleared" if it's mostly transparent (handle anti-aliasing)
+            if (a < 64) cleared++;
+          }
+        }
+        const pct = cleared / Math.max(1, total);
+        return pct;
+      } catch (err) {
+        return 0;
+      }
+    }
+
+    function revealFully() {
+      // mark revealed
+      scratchCover.classList.add('revealed');
+      scratchCover.setAttribute('aria-hidden', 'true');
+      // remove pointer handlers to free resources
+      try {
+        scratchCanvas.removeEventListener('pointerdown', onPointerDown);
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+        scratchCanvas.removeEventListener('touchmove', touchMovePreventer);
+        revealBtn.removeEventListener('click', revealFully);
+      } catch (e) { /* ignore */ }
+
+      // optional small flourish
+      try {
+        scratchCover.animate([
+          { opacity: 1, transform: 'scale(1)' },
+          { opacity: 0.98, transform: 'scale(1.01)' },
+          { opacity: 0, transform: 'scale(1.02)' }
+        ], { duration: 420, easing: 'ease-out' });
+      } catch (e) { /* ignore animation failures */ }
+      // actually hide after transition
+      setTimeout(() => {
+        scratchCover.style.display = 'none';
+      }, 450);
+    }
+
+    // If user prefers reduced motion, provide an immediate accessible fallback:
+    if (prefersReducedMotion) {
+      // make reveal button visible and disable scratch gestures
+      scratchCover.style.pointerEvents = 'auto';
+      revealBtn.style.display = 'inline-block';
+    }
+
+  </script>
+</body>
+</html>
